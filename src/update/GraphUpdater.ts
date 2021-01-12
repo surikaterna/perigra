@@ -20,6 +20,10 @@ export default class GraphUpdater {
         return this.queue(entityMap => entityMap.set(_entity.id, _entity));
     }
 
+    removeEntity(id: EntityId) {
+        return this.queue(entityMap => { entityMap.delete(id); return entityMap; });
+    }
+    
     replaceEntity(_entity: Entity) {
         // return this.queue((Map<EntityId, Entity>) => {
         //     entity;

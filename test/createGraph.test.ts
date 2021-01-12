@@ -7,6 +7,22 @@ describe('GraphUpdater', () => {
     updater.addEntity({ id: '123', type: EntityType.Node, tags: [] });
     const graph = updater.commit();
     expect(Array.from(graph.entities()).length).toEqual(1);
+  });
 
+  it('removes comitted Node', () => {
+    let updater = new GraphUpdater();
+    updater.addEntity({ id: '123', type: EntityType.Node, tags: [] });
+    updater = updater.commit().beginUpdate();
+    updater.removeEntity('123');
+    const graph = updater.commit()
+    expect(Array.from(graph.entities()).length).toEqual(0);
+  });
+
+  it('add and remove Node in same transaction', () => {
+    let updater = new GraphUpdater();
+    updater.addEntity({ id: '123', type: EntityType.Node, tags: [] });
+    updater.removeEntity('123');
+    const graph = updater.commit()
+    expect(Array.from(graph.entities()).length).toEqual(0);
   });
 });

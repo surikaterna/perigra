@@ -3,6 +3,7 @@ import EntityId from "./EntityId";
 import EntityType from './EntityType';
 import Node from './Node';
 import Path from './Path';
+import GraphUpdater from './update/GraphUpdater';
 
 
 export default class Graph {
@@ -93,6 +94,10 @@ export default class Graph {
 
     getEntityPaths(id: EntityId): Path[] {
         return this._cachedPaths.get(id) || []
+    }
+
+    beginUpdate() {
+        return new GraphUpdater(this);
     }
 }
 
