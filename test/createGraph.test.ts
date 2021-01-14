@@ -31,10 +31,9 @@ describe('GraphUpdater', () => {
     updater.addEntity({ id: '123', type: EntityType.Node, tags: {} });
     updater = updater.commit().beginUpdate();
     updater.replaceEntity({ id: '123', type: EntityType.Node, tags: { hello: true } })
-    const graph = updater.commit()
+    const graph = updater.commit();
     expect(Array.from(graph.entities()).length).toEqual(1);
     expect(graph.getEntity('123').tags.hello).toEqual(true);
-    // console.log(graph.getEntity('123').tags);
   });
 
 
