@@ -1,18 +1,26 @@
 import GraphUpdater from "./GraphUpdater";
 import TagsUpdater from './TagsUpdater';
+import Entity from '../Entity';
 
-type Updater<T> = {
-    [K in keyof T as `update${Capitalize<string & K>}`]: () => void
-}
 
-class EntityUpdater {
-    private graphUpdater: GraphUpdater;
+export default class EntityUpdater<T> { //extends Updater<T> {
+    private graphUpdater: GraphUpdater<T>;
+    private current: Entity<T>;
+    constructor(graphUpdater: GraphUpdater<T>, current: Entity<T>) {
+        // super();
+        this.graphUpdater = graphUpdater;
+        this.current = current;
+    }
 
     tags() {
         return new TagsUpdater<this>(this);
     }
 
     end() {
-        return this.graphUpdater;
+        this.graphUpdater.replaceEntity(this.asEntity());
+    }
+
+    private asEntity() {
+        return this.current;
     }
 }

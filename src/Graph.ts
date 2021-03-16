@@ -5,21 +5,20 @@ import Node from './Node';
 import Path from './Path';
 import GraphUpdater from './update/GraphUpdater';
 
+export default class Graph<T> {
+    private _entities: Map<EntityId, Entity<T>>;
+    private _cachedPaths: Map<EntityId, Path<T>[]>;
 
-export default class Graph {
-    private _entities: Map<EntityId, Entity>;
-    private _cachedPaths: Map<EntityId, Path[]>;
-
-    constructor(entities: Entity[]) {
+    constructor(entities: Entity<T>[]) {
         this._entities = entities.reduce((map, entity) => {
             map.set(entity.id, entity);
             return map;
-        }, new Map<EntityId, Entity>());
+        }, new Map<EntityId, Entity<T>>());
         this._cachedPaths = this.rebuildCache();
     }
 
-    static initialize(entityMap: Map<EntityId, Entity>, cachedPaths: Map<EntityId, Path[]>) {
-        const graph = new Graph([]);
+    static initialize<T>(entityMap: Map<EntityId, Entity<T>>, cachedPaths: Map<EntityId, Path<T>[]>) : Graph<T>{
+        const graph = new Graph<T>([]);
         graph._entities = entityMap;
         graph._cachedPaths = cachedPaths;
 
@@ -45,7 +44,7 @@ export default class Graph {
         const cache = idArray.reduce((map, id) => {
             const entity = this.getEntity(id);
             if (entity.type == EntityType.Path) {
-                const path = <Path>entity;
+                const path = <Path<T>>entity;
                 path.nodes.forEach(node => {
                     const paths = map.get(node.id) || [];
                     paths.push(path);
@@ -53,13 +52,13 @@ export default class Graph {
                 });
             }
             return map;
-        }, new Map<EntityId, Path[]>());
+        }, new Map<EntityId, Path<T>[]>());
 
         return cache;
     }
 
-    getEntity(id: EntityId): Entity {
-        const Entity: Entity | undefined = this._entities.get(id);
+    getEntity(id: EntityId): Entity<T> {
+        const Entity: Entity<T> | undefined = this._entities.get(id);
         if (Entity === undefined) {
             throw new RangeError('id not found in graph: ' + id);
         } else {
@@ -67,20 +66,20 @@ export default class Graph {
         }
     }
 
-    getEntityAs<T extends Entity>(id: EntityId, type: EntityType) {
-        const Entity: Entity = this.getEntity(id);
+    getEntityAs<J extends Entity<T>>(id: EntityId, type: EntityType) {
+        const Entity: Entity<T> = this.getEntity(id);
         if (Entity.type === type) {
-            return <T>Entity;
+            return <J>Entity;
         } else {
             throw new TypeError(`Entity of wrong type got ${Entity.type} expected ${type}`);
         }
     }
 
-    getNode(id: EntityId): Node {
+    getNode(id: EntityId): Node<T> {
         return this.getEntityAs(id, EntityType.Node);
     }
 
-    getPath(id: EntityId): Path {
+    getPath(id: EntityId): Path<T> {
         return this.getEntityAs(id, EntityType.Path);
     }
 
@@ -92,12 +91,12 @@ export default class Graph {
         return this._entities.keys();
     }
 
-    getEntityPaths(id: EntityId): Path[] {
+    getEntityPaths(id: EntityId): Path<T>[] {
         return this._cachedPaths.get(id) || []
     }
 
     beginUpdate() {
-        return new GraphUpdater(this);
+        return new GraphUpdater<T>(this);
     }
 }
 

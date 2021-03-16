@@ -1,5 +1,8 @@
 import Entity from './Entity';
 type Position = [number, number];
-export default interface Node extends Entity {
+
+type Node<T> = Entity<T & { 
     position: Position
-}
+}>;
+
+export default Node;

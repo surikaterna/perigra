@@ -7,6 +7,7 @@ describe('GraphUpdater', () => {
     updater.addEntity({ id: '123', type: EntityType.Node, tags: {} });
     const graph = updater.commit();
     expect(Array.from(graph.entities()).length).toEqual(1);
+    expect(graph.getEntity('123').id).toEqual('123');
   });
 
   it('removes comitted Node', () => {

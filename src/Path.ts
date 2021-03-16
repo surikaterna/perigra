@@ -1,6 +1,6 @@
 import Entity from './Entity';
 import Node from './Node';
 
-export default interface Path extends Entity {
-    readonly nodes: Node[];
-}
+type Path<T> = Entity<T & { nodes: Node<T>[] }>;
+
+export default Path;

@@ -1,22 +1,25 @@
 import Entity from '../Entity';
 import EntityId from '../EntityId';
+import EntityType from '../EntityType';
 import Graph from '../Graph';
 
-export type GraphAction = (Entitys: Map<EntityId, Entity>) => Map<EntityId, Entity>;
+import EntityUpdater from './EntityUpdater';
 
-export default class GraphUpdater {
-    private actions: GraphAction[] = [];
-    private graph: Graph;
-    constructor(graph: Graph = new Graph([])) {
+export type GraphAction<T> = (entities: Map<EntityId, Entity<T>>) => Map<EntityId, Entity<T>>;
+
+export default class GraphUpdater<T> {
+    private actions: GraphAction<T>[] = [];
+    private graph: Graph<T>;
+    constructor(graph: Graph<T> = new Graph([])) {
         this.graph = graph;
     }
 
-    queue(action: GraphAction): GraphUpdater {
+    queue(action: GraphAction<T>): GraphUpdater<T> {
         this.actions.push(action);
         return this;
     }
 
-    addEntity(_entity: Entity) {
+    addEntity(_entity: Entity<T>) {
         return this.queue(entityMap => entityMap.set(_entity.id, _entity));
     }
 
@@ -24,7 +27,7 @@ export default class GraphUpdater {
         return this.queue(entityMap => { entityMap.delete(id); return entityMap; });
     }
 
-    replaceEntity(_entity: Entity) {
+    replaceEntity(_entity: Entity<T>) {
         return this.queue(entityMap => entityMap.set(_entity.id, _entity));
     }
     // add path -> set
@@ -40,18 +43,21 @@ export default class GraphUpdater {
     // node(12).tags().add('123','123').end().end().commit();//(12).insertAt(12, e).end().commit();
     // node(12).position()
 
-
+    node(nodeId: EntityId) {
+        return new EntityUpdater<T>(this, this.graph.getEntityAs(nodeId, EntityType.Node));
+    }
     commit() {
         return this.update();
     }
 
-    private update(..._actions: GraphAction[]): Graph {
+    private update(..._actions: GraphAction<T>[]): Graph<T> {
         const state = this.graph._cloneState();
         this.actions.forEach(a => a(state.entities));
 
+        // TODO, compact graph, multiple subsequent replaces would remove later ones?
         // TODO, actions should change the graph state
         // TODO, efficently recalculate cachedPaths depending on the changes / actions
-        return Graph.initialize(state.entities, state.cachedPaths);
+        return Graph.initialize<T>(state.entities, state.cachedPaths);
     }
 
 }

@@ -1,7 +1,7 @@
 import EntityId from './EntityId';
 import EntityType from './EntityType';
 
-interface EntityBaseState {
+export interface EntityBaseState {
     readonly id: EntityId;
     readonly type: EntityType;
     readonly tags: Tags;
@@ -13,11 +13,12 @@ type Updater<T> = {
 type Tags = Readonly<Record<string, any>>;
 
 type Getter<T> = {
-    [K in keyof T]: () => Readonly<K>
+    readonly [K in keyof T]: T[K]
 }
 
-type Entity<T> = Getter<T>;
+type Entity<T> = Getter<T & EntityBaseState>;// & Updater<T & EntityBaseState>;
 
+export default Entity;
 // export default interface Entity<T> extends Updater<T> {
 //     readonly state: Readonly<T> | EntityBaseState;
 // }
