@@ -57,8 +57,13 @@ export default class Graph<T> {
         return cache;
     }
 
+    getEntityUnsafe(id: EntityId): Entity<T> | undefined {
+        return this._entities.get(id);
+    }
+
+
     getEntity(id: EntityId): Entity<T> {
-        const Entity: Entity<T> | undefined = this._entities.get(id);
+        const Entity: Entity<T> | undefined = this.getEntityUnsafe(id);
         if (Entity === undefined) {
             throw new RangeError('id not found in graph: ' + id);
         } else {

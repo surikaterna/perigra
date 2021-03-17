@@ -1,14 +1,13 @@
-import GraphUpdater from "./GraphUpdater";
 import TagsUpdater from './TagsUpdater';
 import Entity from '../Entity';
 
 
-export default class EntityUpdater<T> { //extends Updater<T> {
-    private graphUpdater: GraphUpdater<T>;
+export default class EntityUpdater<T, ParentUpdaterType> { //extends Updater<T> {
+    private parentUpdater: ParentUpdaterType;
     private current: Entity<T>;
-    constructor(graphUpdater: GraphUpdater<T>, current: Entity<T>) {
+    constructor(parentUpdater: ParentUpdaterType, current: Entity<T>) {
         // super();
-        this.graphUpdater = graphUpdater;
+        this.parentUpdater = parentUpdater;
         this.current = current;
     }
 
@@ -16,8 +15,9 @@ export default class EntityUpdater<T> { //extends Updater<T> {
         return new TagsUpdater<this>(this);
     }
 
-    end() {
-        this.graphUpdater.replaceEntity(this.asEntity());
+    end() : ParentUpdaterType{
+        this.parentUpdater.replaceEntity(this.asEntity());
+        return this.parentUpdater;
     }
 
     private asEntity() {

@@ -8,7 +8,7 @@ export interface EntityBaseState {
 }
 
 type Updater<T> = {
-    [K in keyof T as `update${Capitalize<string & K>}`]: () => void
+    [K in keyof T as `update${Capitalize<string & K>}`]: (value:T[K]) => Updater<T>;
 }
 type Tags = Readonly<Record<string, any>>;
 

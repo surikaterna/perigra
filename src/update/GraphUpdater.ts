@@ -1,26 +1,29 @@
-import Entity from '../Entity';
+import Entity, {EntityBaseState } from '../Entity';
 import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import Graph from '../Graph';
+import Node from '../Node';
 
 import EntityUpdater from './EntityUpdater';
 
 export type GraphAction<T> = (entities: Map<EntityId, Entity<T>>) => Map<EntityId, Entity<T>>;
 
-export default class GraphUpdater<T> {
-    private actions: GraphAction<T>[] = [];
-    private graph: Graph<T>;
-    constructor(graph: Graph<T> = new Graph([])) {
+export default class GraphUpdater<NodeType = {}, PathType={}> {
+    
+    private actions: GraphAction<EntityBaseState>[] = [];
+    private graph: Graph<NodeType | PathType>;
+    constructor(graph: Graph<NodeType | PathType> = new Graph([])) {
         this.graph = graph;
     }
 
-    queue(action: GraphAction<T>): GraphUpdater<T> {
+    queue(action: GraphAction<NodeType | PathType>): GraphUpdater<NodeType, PathType, BaseTypeT> {
         this.actions.push(action);
         return this;
     }
 
-    addEntity(_entity: Entity<T>) {
-        return this.queue(entityMap => entityMap.set(_entity.id, _entity));
+    addEntity(entity: Entity<NodeType | PathType>) {
+        this.queue(entityMap => entityMap.set(entity.id, entity));
+        return this.node(entity.id);
     }
 
     removeEntity(id: EntityId) {
@@ -43,9 +46,14 @@ export default class GraphUpdater<T> {
     // node(12).tags().add('123','123').end().end().commit();//(12).insertAt(12, e).end().commit();
     // node(12).position()
 
-    node(nodeId: EntityId) {
-        return new EntityUpdater<T>(this, this.graph.getEntityAs(nodeId, EntityType.Node));
+    addNode(node: Node<NodeType>) {
+        return this.addEntity(node);
     }
+
+    node(nodeId: EntityId) {
+        return new EntityUpdater<NodeType>(this, this.graph.getEntityAs(nodeId, EntityType.Node));
+    }
+
     commit() {
         return this.update();
     }
