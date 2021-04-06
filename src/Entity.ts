@@ -1,9 +1,15 @@
 import EntityId from './EntityId';
 import EntityType from './EntityType';
 
-export interface EntityBaseState {
+/**
+ * Not allowed to be changed by client API
+ */
+export interface EntityStateCannotChange {
     readonly id: EntityId;
     readonly type: EntityType;
+}
+
+export interface EntityBaseState extends EntityStateCannotChange {
     readonly tags: Tags;
 }
 

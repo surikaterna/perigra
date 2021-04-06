@@ -2,22 +2,22 @@ import TagsUpdater from './TagsUpdater';
 import Entity from '../Entity';
 
 
-export default class EntityUpdater<T, ParentUpdaterType> { //extends Updater<T> {
-    private parentUpdater: ParentUpdaterType;
+export default class EntityUpdater<T, ParentUpdaterType> extends Updater<T> {
     private current: Entity<T>;
-    constructor(parentUpdater: ParentUpdaterType, current: Entity<T>) {
+    private _end: (entity: Entity<T>) => ParentUpdaterType;
+    constructor(current: Entity<T>, end: (entity: Entity<T>) => ParentUpdaterType) {
         // super();
-        this.parentUpdater = parentUpdater;
         this.current = current;
+        this._end = end;
     }
 
     tags() {
         return new TagsUpdater<this>(this);
     }
 
-    end() : ParentUpdaterType{
-        this.parentUpdater.replaceEntity(this.asEntity());
-        return this.parentUpdater;
+    end(): ParentUpdaterType {
+
+        return this._end(this.current);
     }
 
     private asEntity() {
