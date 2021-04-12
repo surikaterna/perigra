@@ -22,7 +22,7 @@ const myEntityTemplate: MyEntity = deepFreeze({
 });
 
 
-describe.only('entityUpdater', () => {
+describe('entityUpdater', () => {
   it('change property of node', (async) => {
     const upg = createObjectUpdater(myEntityTemplate, (res) => {
       expect(res.position).toEqual([12, 23]);

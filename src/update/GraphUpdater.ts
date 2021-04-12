@@ -1,18 +1,17 @@
-import Entity, { EntityBaseState } from '../Entity';
+import Entity from '../Entity';
 import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import Graph from '../Graph';
 import Node from '../Node';
+import GraphUpgrader from '../upgrader/GraphUpgrader';
 
-import EntityUpdater from './EntityUpdater';
 import GraphAction, { ActionType } from './GraphAction';
+import ObjectUpdater from './ObjectUpdater';
 import createObjectUpdater from './updaters/createObjectUpdater';
-
-// export type GraphAction<T> = (entities: Map<EntityId, Entity<T>>) => Map<EntityId, Entity<T>>;
 
 export default class GraphUpdater<NodeType = {}, PathType = {}> {
 
-    private actions: GraphAction<Entity<NodeType | PathType>>[] = [];
+    private actions: GraphAction<NodeType | PathType>[] = [];
     private graph: Graph<NodeType, PathType>;
     constructor(graph: Graph<NodeType, PathType> = new Graph([])) {
         this.graph = graph;
@@ -25,11 +24,11 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
 
     addEntity(entity: Entity<NodeType | PathType>) {
         this.queue({ type: ActionType.Added, head: entity });
-        return this.node(entity.id);
+        return this.entityUpdater(entity)
     }
 
     removeEntity(id: EntityId) {
-        return this.queue({ type: ActionType.Removed, base: this.graph.getEntity(id) });
+        return this.queue({ type: ActionType.Removed, base: this.graph.getEntityUnsafe(id) });
     }
 
     replaceEntity(_entity: Entity<NodeType | PathType>) {
@@ -48,30 +47,33 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     // node(12).tags().add('123','123').end().end().commit();//(12).insertAt(12, e).end().commit();
     // node(12).position()
 
-    addNode(node: Node<NodeType>) {
-        return this.addEntity(node);
+    addNode(node: Node<NodeType>): ObjectUpdater<Node<NodeType>, GraphUpdater<NodeType, PathType>> {
+        this.addEntity(node);
+        return this.entityUpdater(node);
     }
-
-    node(nodeId: EntityId) {
-        const node: Entity<NodeType> = this.graph.getEntityAs<Entity<NodeType>>(nodeId, EntityType.Node);
-        return createObjectUpdater<Entity<NodeType>, GraphUpdater<NodeType, PathType>>(node
+    private entityUpdater<T extends Entity<NodeType | PathType>>(node: T): ObjectUpdater<T, GraphUpdater<NodeType, PathType>> {
+        return createObjectUpdater<T, GraphUpdater<NodeType, PathType>>(node
             ,
             entity => { this.replaceEntity(entity); return this; });
-        return new EntityUpdater<NodeType, GraphUpdater<NodeType, PathType>>(this.graph.getEntityAs(nodeId, EntityType.Node), entity => { this.replaceEntity(entity); return this; });
+    }
+    node(nodeId: EntityId) {
+        const node = this.graph.getEntityAs<Node<NodeType>>(nodeId, EntityType.Node);
+        return this.entityUpdater(node);
     }
 
     commit() {
-        // return this.update();
+        return this.upgrade(this.actions);
     }
 
-    // private update(..._actions: GraphAction<NodeType|EntityType>[]): Graph<NodeType> {
-    //     const state = this.graph._cloneState();
-    //     this.actions.forEach(a => a(state.entities));
+    private upgrade(_actions: GraphAction<NodeType | PathType>[]): Graph<NodeType, PathType> {
+        // const state = this.graph._cloneState();
+        // this.actions.forEach(a => a(state.entities));
 
-    //     // TODO, compact graph, multiple subsequent replaces would remove later ones?
-    //     // TODO, actions should change the graph state
-    //     // TODO, efficently recalculate cachedPaths depending on the changes / actions
-    //     // return Graph.initialize<NodeType>(state.entities, state.cachedPaths);
-    // }
+        // TODO, compact graph, multiple subsequent replaces would remove later ones?
+        // TODO, actions should change the graph state
+        // TODO, efficently recalculate cachedPaths depending on the changes / actions
+        // return Graph.initialize<NodeType>(state.entities, state.cachedPaths);
+        return new GraphUpgrader(this.graph).increment(_actions);
+    }
 
 }
