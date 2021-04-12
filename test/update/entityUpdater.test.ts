@@ -1,4 +1,5 @@
-import ObjectUpdater from '../../src/update/ObjectUpdater';
+import ObjectUpdater, {RecordUpdater} from '../../src/update/ObjectUpdater';
+import createObjectUpdater from '../../src/update/updaters/createObjectUpdater';
 
 // import EntityType from '../../src/EntityType';
 // import GraphUpdater from '../../src/update/GraphUpdater';
@@ -12,36 +13,9 @@ import ObjectUpdater from '../../src/update/ObjectUpdater';
 
 
 
-const createObjectUpdater = <T, TParent>(target: T, resultCallback: (result:T)=>TParent) => {
-  const objectHandler = {
-    get: (target, key: string, receiver) => {
-      console.log('**** PXY', target, key, receiver);
-      return () => {
-        let result = receiver;
-        console.log('**** PXY()', target, key, receiver);
-        if (key.startsWith('update')) {
-          console.log('**** update()', target, key, receiver);
-        } else if (key.endsWith('AsObject')) {
-          result = createObjectUpdater(target, () => { });
-        } else if (key.endsWith('AsRecord')) {
-          console.log('**** asRecord()', target, key, receiver);
-        } else if (key === 'end') {
-          console.log('**** THE END()', target, key, receiver);
-        } else {
-          throw new Error('Proxy unable to resolve intention!!');
-        }
-        return receiver;
-      }
-    },
-  }
-  return <T>new Proxy<any>(target, objectHandler)
-}
 
 describe('entityUpdater', () => {
   it.only('change position of node', () => {
-
-
-    const upg: ObjectUpdater<MyEntity, {}> = new Proxy<any>({},);
 
     type MyEntity = {
       position: [number, number],
@@ -50,8 +24,20 @@ describe('entityUpdater', () => {
       body: { nose: string, arm: boolean, hand: { fingers: number } }
     }
 
+    const upg: ObjectUpdater<MyEntity, {}> = createObjectUpdater<MyEntity, {}>({
+      position: [1, 1],
+      id: 'abc',
+      tags: { hello: 'world' },
+      body: { nose: 'yes', arm: false, hand: { fingers: 10 } }
+    }, (res) => {
+      console.log('res', res);
+      return {};
+    });
+
+
     upg
       .updatePosition([12, 23])
+      .updatePosition([66, 99])
       .bodyAsObject()
       .updateNose('123')
       .updateArm(true)
@@ -61,14 +47,14 @@ describe('entityUpdater', () => {
       .end()
       .bodyAsRecord()
       .replace('nose', '999')
-      .replace('arm', 'hello')
-      .add('hand', false)
+        .replace('arm', 'hello')
+        .add('hand', false)
       .end()
       .tagsAsRecord()
-      .replace('asdasd', 'asdasd')
+        .replace('asdasd', 'asdasd')
       .end()
       .updateTags({ aa: 'bb' })
-      .updateBody({ nose: '666', arm: false, hand: { fingers: 12 } })
+      .updateBody({ nose: '666', arm: false, hand: { fingers: 16 } })
       .end()
 
     // .updatePosition([12, 23])

@@ -6,7 +6,7 @@ export default class EntityUpdater<T, ParentUpdaterType> extends Updater<T> {
     private current: Entity<T>;
     private _end: (entity: Entity<T>) => ParentUpdaterType;
     constructor(current: Entity<T>, end: (entity: Entity<T>) => ParentUpdaterType) {
-        // super();
+        super();
         this.current = current;
         this._end = end;
     }
