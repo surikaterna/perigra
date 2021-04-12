@@ -13,18 +13,12 @@ export interface EntityBaseState extends EntityStateCannotChange {
     readonly tags: Tags;
 }
 
-type Updater<T> = {
-    [K in keyof T as `update${Capitalize<string & K>}`]: (value:T[K]) => Updater<T>;
-}
 type Tags = Readonly<Record<string, any>>;
 
 type Getter<T> = {
     readonly [K in keyof T]: T[K]
 }
 
-type Entity<T> = Getter<T & EntityBaseState>;// & Updater<T & EntityBaseState>;
+type Entity<T> = Getter<T & EntityBaseState>;  
 
 export default Entity;
-// export default interface Entity<T> extends Updater<T> {
-//     readonly state: Readonly<T> | EntityBaseState;
-// }

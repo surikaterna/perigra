@@ -5,14 +5,16 @@ import Graph from '../Graph';
 import Node from '../Node';
 
 import EntityUpdater from './EntityUpdater';
+import GraphAction, { ActionType } from './GraphAction';
+import createObjectUpdater from './updaters/createObjectUpdater';
 
-export type GraphAction<T> = (entities: Map<EntityId, Entity<T>>) => Map<EntityId, Entity<T>>;
+// export type GraphAction<T> = (entities: Map<EntityId, Entity<T>>) => Map<EntityId, Entity<T>>;
 
 export default class GraphUpdater<NodeType = {}, PathType = {}> {
 
-    private actions: GraphAction<any>[] = [];
-    private graph: Graph<NodeType | PathType>;
-    constructor(graph: Graph<NodeType | PathType> = new Graph([])) {
+    private actions: GraphAction<Entity<NodeType | PathType>>[] = [];
+    private graph: Graph<NodeType, PathType>;
+    constructor(graph: Graph<NodeType, PathType> = new Graph([])) {
         this.graph = graph;
     }
 
@@ -22,16 +24,16 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     }
 
     addEntity(entity: Entity<NodeType | PathType>) {
-        this.queue(entityMap => entityMap.set(entity.id, entity));
+        this.queue({ type: ActionType.Added, head: entity });
         return this.node(entity.id);
     }
 
     removeEntity(id: EntityId) {
-        return this.queue(entityMap => { entityMap.delete(id); return entityMap; });
+        return this.queue({ type: ActionType.Removed, base: this.graph.getEntity(id) });
     }
 
     replaceEntity(_entity: Entity<NodeType | PathType>) {
-        return this.queue(entityMap => entityMap.set(_entity.id, _entity));
+        return this.queue({ type: ActionType.Removed, base: this.graph.getEntity(_entity.id), head: _entity });
     }
     // add path -> set
     // change nodes in path -> replace path
@@ -51,6 +53,10 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     }
 
     node(nodeId: EntityId) {
+        const node: Entity<NodeType> = this.graph.getEntityAs<Entity<NodeType>>(nodeId, EntityType.Node);
+        return createObjectUpdater<Entity<NodeType>, GraphUpdater<NodeType, PathType>>(node
+            ,
+            entity => { this.replaceEntity(entity); return this; });
         return new EntityUpdater<NodeType, GraphUpdater<NodeType, PathType>>(this.graph.getEntityAs(nodeId, EntityType.Node), entity => { this.replaceEntity(entity); return this; });
     }
 
