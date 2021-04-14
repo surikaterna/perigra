@@ -3,11 +3,11 @@ import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import Graph from '../Graph';
 import Node from '../Node';
-import GraphUpgrader from '../upgrader/GraphUpgrader';
+import GraphUpgrader from '../merger/GraphMerger';
 
 import GraphAction, { ActionType } from './GraphAction';
 import ObjectUpdater from './ObjectUpdater';
-import createObjectUpdater from './updaters/createObjectUpdater';
+import createObjectUpdater from './proxies/createObjectUpdater';
 
 export default class GraphUpdater<NodeType = {}, PathType = {}> {
 

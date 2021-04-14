@@ -37,6 +37,4 @@ describe('GraphUpdater', () => {
     expect(Array.from(graph.entities()).length).toEqual(1);
     expect(graph.getEntity('123').tags.hello).toEqual(true);
   });
-
-
 });

@@ -1,3 +1,5 @@
+import Cache from './cache/Cache';
+import CacheBuilder from './cache/CacheBuilder';
 import Entity from './Entity';
 import EntityId from "./EntityId";
 import EntityType from './EntityType';
@@ -7,20 +9,21 @@ import GraphUpdater from './update/GraphUpdater';
 
 export default class Graph<NodeType, PathType> {
     private _entities: Map<EntityId, Entity<NodeType | PathType>>;
-    private _cachedPaths: Map<EntityId, Path<PathType>[]>;
+    private _cache: Cache<NodeType, PathType>;
 
     constructor(entities: Entity<NodeType | PathType>[]) {
         this._entities = entities.reduce((map, entity) => {
             map.set(entity.id, entity);
             return map;
         }, new Map<EntityId, Entity<NodeType | PathType>>());
-        this._cachedPaths = this.rebuildCache();
+        this._cache = new CacheBuilder().buildCache<NodeType, PathType>(this._entities, Array.from(this.entityIds()));
     }
 
-    static initialize<NodeType, PathType>(entityMap: Map<EntityId, Entity<NodeType | PathType>>, cachedPaths: Map<EntityId, Path<PathType>[]>): Graph<NodeType, PathType> {
+
+    static initialize<NodeType, PathType>(entityMap: Map<EntityId, Entity<NodeType | PathType>>, cache: Cache<NodeType, PathType>): Graph<NodeType, PathType> {
         const graph = new Graph<NodeType, PathType>([]);
         graph._entities = entityMap;
-        graph._cachedPaths = cachedPaths;
+        graph._cache = cache;
 
         return graph;
     }
@@ -31,31 +34,11 @@ export default class Graph<NodeType, PathType> {
     _cloneState() {
         return {
             entities: new Map(this._entities),
-            cachedPaths: new Map(this._cachedPaths)
+            cache: this._cache.clone()
         }
     }
 
-    private rebuildCache(ids?: EntityId[]) {
-        let idArray = ids;
-        if (idArray === undefined) {
-            idArray = Array.from(this.entityIds());
-        }
 
-        const cache = idArray.reduce((map, id) => {
-            const entity = this.getEntity(id);
-            if (entity.type == EntityType.Path) {
-                const path = <Path<PathType>>entity;
-                path.nodes.forEach(node => {
-                    const paths = map.get(node.id) || [];
-                    paths.push(path);
-                    map.set(node.id, paths);
-                });
-            }
-            return map;
-        }, new Map<EntityId, Path<PathType>[]>());
-
-        return cache;
-    }
 
     getEntityUnsafe(id: EntityId): Entity<NodeType | PathType> | undefined {
         return this._entities.get(id);
@@ -84,7 +67,7 @@ export default class Graph<NodeType, PathType> {
         return this.getEntityAs(id, EntityType.Node);
     }
 
-    getPath(id: EntityId): Path<PathType> {
+    getPath(id: EntityId): Path<PathType, NodeType> {
         return this.getEntityAs(id, EntityType.Path);
     }
 
@@ -96,8 +79,8 @@ export default class Graph<NodeType, PathType> {
         return this._entities.keys();
     }
 
-    getEntityPaths(id: EntityId): Path<PathType>[] {
-        return this._cachedPaths.get(id) || []
+    getEntityPaths(id: EntityId): Path<PathType, NodeType>[] {
+        return this._cache.getEntityPaths(id) || []
     }
 
     beginUpdate() {

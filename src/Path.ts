@@ -1,6 +1,6 @@
 import Entity from './Entity';
 import Node from './Node';
 
-type Path<T> = Entity<T & { nodes: Node<T>[] }>;
+type Path<PathType,NodeType> = Entity<PathType & { nodes: Readonly<Node<NodeType>[]> }>;
 
 export default Path;
