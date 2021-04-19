@@ -1,5 +1,5 @@
 enum EntityType {
-    Node,
-    Path
+  Node,
+  Path
 }
 export default EntityType;

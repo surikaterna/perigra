@@ -1,14 +1,14 @@
-import createObjectUpdater from '../../src/update/updaters/createObjectUpdater';
+import createObjectUpdater from '../../src/update/proxies/createObjectUpdater';
 
 type MyEntity = {
-  position: [number, number],
-  id: string,
-  tags: Record<string, string>,
-  body: { nose: string, arm: boolean, hand: { fingers: number } }
-}
+  position: [number, number];
+  id: string;
+  tags: Record<string, string>;
+  body: { nose: string; arm: boolean; hand: { fingers: number } };
+};
 
 const deepFreeze = <T extends Record<string, any>>(obj: T) => {
-  Object.keys(obj).forEach(prop => {
+  Object.keys(obj).forEach((prop) => {
     if (typeof obj[prop] === 'object') deepFreeze(obj[prop]);
   });
   return <T>Object.freeze(obj);
@@ -21,7 +21,6 @@ const myEntityTemplate: MyEntity = deepFreeze({
   body: { nose: 'yes', arm: false, hand: { fingers: 10 } }
 });
 
-
 describe('entityUpdater', () => {
   it('change property of node', (async) => {
     const upg = createObjectUpdater(myEntityTemplate, (res) => {
@@ -31,9 +30,7 @@ describe('entityUpdater', () => {
       return {};
     });
 
-    upg
-      .updatePosition([12, 23])
-      .end();
+    upg.updatePosition([12, 23]).end();
   });
 
   it('change sub object of node', (async) => {
@@ -44,12 +41,8 @@ describe('entityUpdater', () => {
       return {};
     });
 
-    upg
-      .bodyAsObject()
-        .updateArm(true)
-      .end()
-    .end();
-  });  
+    upg.bodyAsObject().updateArm(true).end().end();
+  });
 
   it('change sub record of node', (async) => {
     const upg = createObjectUpdater(myEntityTemplate, (res) => {
@@ -58,10 +51,6 @@ describe('entityUpdater', () => {
       async();
     });
 
-    upg
-      .tagsAsRecord()
-        .replace('as', '123123')
-      .end()
-    .end();
-  });  
+    upg.tagsAsRecord().replace('as', '123123').end().end();
+  });
 });

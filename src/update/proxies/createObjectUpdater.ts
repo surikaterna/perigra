@@ -29,9 +29,9 @@ const createObjectUpdater = <T extends Record<string, any>, TParent>(orgTarget: 
           throw new Error('Object Proxy unable to resolve intention!! ' + key);
         }
         return result;
-      }
-    },
-  }
-  return <ObjectUpdater<T, TParent>>new Proxy<any>(orgTarget, objectHandler);
-}
+      };
+    }
+  };
+  return new Proxy<any>(orgTarget, objectHandler) as ObjectUpdater<T, TParent>;
+};
 export default createObjectUpdater;

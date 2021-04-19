@@ -26,12 +26,7 @@
       "pre-commit": "tsdx lint"
     }
   },
-  "prettier": {
-    "printWidth": 80,
-    "semi": true,
-    "singleQuote": true,
-    "trailingComma": "es5"
-  },
+  "prettier": "prettier-config-surikaterna",
   "name": "perigra",
   "author": "Surikat",
   "module": "dist/perigra.esm.js",
@@ -48,6 +43,8 @@
   "devDependencies": {
     "@size-limit/preset-small-lib": "^4.9.1",
     "husky": "^4.3.7",
+    "prettier": "^2.1.2",
+    "prettier-config-surikaterna": "^1.0.1",
     "size-limit": "^4.9.1",
     "tsdx": "^0.14.1",
     "tslib": "^2.1.0",

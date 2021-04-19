@@ -1,14 +1,14 @@
-import Entity from "../Entity";
+import Entity from '../Entity';
 
 export enum ActionType {
-    Added,
-    Replaced,
-    Removed
+  Added,
+  Replaced,
+  Removed
 }
 
 type GraphAction<T> = {
-    type: ActionType,
-    base?: Entity<T>,
-    head?: Entity<T>,
-}
+  type: ActionType;
+  base?: Entity<T>;
+  head?: Entity<T>;
+};
 export default GraphAction;
