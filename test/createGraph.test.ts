@@ -6,7 +6,6 @@ describe('GraphUpdater', () => {
     const updater = new GraphUpdater();
     updater.addEntity({ id: '123', type: EntityType.Node, tags: {} });
     const graph = updater.commit();
-    console.log('HELLO', graph);
     expect(Array.from(graph.entities()).length).toEqual(1);
     expect(graph.getEntity('123').id).toEqual('123');
   });
@@ -18,7 +17,7 @@ describe('GraphUpdater', () => {
     updater.removeEntity('123');
     const graph = updater.commit()
     expect(Array.from(graph.entities()).length).toEqual(0);
-  });
+  }); 
 
   it('add and remove Node in same transaction', () => {
     let updater = new GraphUpdater();

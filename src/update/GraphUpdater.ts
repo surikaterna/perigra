@@ -28,11 +28,11 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     }
 
     removeEntity(id: EntityId) {
-        return this.queue({ type: ActionType.Removed, base: this.graph.getEntityUnsafe(id) });
+        return this.queue({ type: ActionType.Removed, base: this.graph.getEntityUnsafe(id) || this.resolveEntityFromChanges(id) });
     }
 
     replaceEntity(_entity: Entity<NodeType | PathType>) {
-        return this.queue({ type: ActionType.Removed, base: this.graph.getEntity(_entity.id), head: _entity });
+        return this.queue({ type: ActionType.Replaced, base: this.graph.getEntity(_entity.id), head: _entity });
     }
     // add path -> set
     // change nodes in path -> replace path
@@ -51,6 +51,17 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
         this.addEntity(node);
         return this.entityUpdater(node);
     }
+
+    private resolveEntityFromChanges(id: EntityId) {
+        for (let i = this.actions.length; i > 0; i--) {
+            const action = this.actions[i-1];
+            if(action.type === ActionType.Added && action.head && action.head.id === id) {
+                return action.head;
+            }
+        }
+        throw new Error('Unable to find entity for id: ' + id);
+    }
+
     private entityUpdater<T extends Entity<NodeType | PathType>>(node: T): ObjectUpdater<T, GraphUpdater<NodeType, PathType>> {
         return createObjectUpdater<T, GraphUpdater<NodeType, PathType>>(node
             ,
