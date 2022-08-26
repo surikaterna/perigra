@@ -10,15 +10,15 @@ import GraphAction, { ActionType } from '../update/GraphAction';
 /**
  * GraphUpgraders takes a base graph and allows incremental application of a list of actions to produce a new graph
  */
-export default class GraphUpgrader<N, P> {
-  // private base: Graph<N, P>;
-  private head: Graph<N, P>;
-  constructor(base: Graph<N, P>) {
+export default class GraphUpgrader<NodeType, PathType> {
+  // private base: Graph<NodeType, P>;
+  private head: Graph<NodeType, PathType>;
+  constructor(base: Graph<NodeType, PathType>) {
     // this.base =
     this.head = base;
   }
 
-  increment(changes: GraphAction<N | P>[]) {
+  increment(changes: GraphAction<NodeType | PathType>[]) {
     const state = this.head._cloneState();
     changes.forEach((change) => {
       switch (change.type) {
@@ -33,7 +33,7 @@ export default class GraphUpgrader<N, P> {
           if (!change.base) {
             throw new Error('No base available' + change);
           }
-          const node = change.base as Node<N>;
+          const node = change.base as Node<NodeType>;
 
           // change all the paths that link this node.
           // TODO: break out to separate changes
@@ -53,6 +53,6 @@ export default class GraphUpgrader<N, P> {
     });
 
     const cache = state.cache.increment(changes);
-    return (this.head = Graph.initialize<N, P>(state.entities, cache));
+    return (this.head = Graph.initialize<NodeType, PathType>(state.entities, cache));
   }
 }

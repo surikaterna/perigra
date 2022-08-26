@@ -1,4 +1,5 @@
 import EntityType from '../src/EntityType';
+import Graph from '../src/Graph';
 import GraphUpdater from '../src/update/GraphUpdater';
 
 describe('GraphUpdater', () => {
@@ -35,5 +36,27 @@ describe('GraphUpdater', () => {
     const graph = updater.commit();
     expect(Array.from(graph.entities()).length).toEqual(1);
     expect(graph.getEntity('123').tags.hello).toEqual(true);
+  });
+
+  it('should get correct paths for specify node', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2] };
+
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addPath(path1);
+
+    graph = updater.commit();
+
+    expect(graph.getEntityPaths('node-1')).toEqual([path1]);
+    expect(graph.getEntityPaths('node-2')).toEqual([path1]);
+
+    done();
   });
 });

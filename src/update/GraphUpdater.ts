@@ -3,11 +3,12 @@ import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import Graph from '../Graph';
 import Node from '../Node';
-import GraphUpgrader from '../merger/GraphMerger';
+import GraphMerger from '../merger/GraphMerger';
 
 import GraphAction, { ActionType } from './GraphAction';
 import ObjectUpdater from './ObjectUpdater';
 import createObjectUpdater from './proxies/createObjectUpdater';
+import Path from '../Path';
 
 export default class GraphUpdater<NodeType = {}, PathType = {}> {
   private actions: GraphAction<NodeType | PathType>[] = [];
@@ -30,6 +31,7 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     return this.queue({ type: ActionType.Removed, base: this.graph.getEntityUnsafe(id) || this.resolveEntityFromChanges(id) });
   }
 
+  // TODO: revise in the future to truncate change e.g. move the same node two times should be one change
   replaceEntity(_entity: Entity<NodeType | PathType>) {
     return this.queue({ type: ActionType.Replaced, base: this.graph.getEntity(_entity.id), head: _entity });
   }
@@ -45,6 +47,11 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
   // addNode().link(12).insertAt(12, e).end().commit();
   // node(12).tags().add('123','123').end().end().commit();//(12).insertAt(12, e).end().commit();
   // node(12).position()
+
+  addPath(path: Path<PathType, NodeType>) {
+    this.addEntity(path);
+    return this.entityUpdater(path);
+  }
 
   addNode(node: Node<NodeType>): ObjectUpdater<Node<NodeType>, GraphUpdater<NodeType, PathType>> {
     this.addEntity(node);
@@ -84,6 +91,6 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     // TODO, actions should change the graph state
     // TODO, efficently recalculate cachedPaths depending on the changes / actions
     // return Graph.initialize<NodeType>(state.entities, state.cachedPaths);
-    return new GraphUpgrader(this.graph).increment(_actions);
+    return new GraphMerger(this.graph).increment(_actions);
   }
 }
