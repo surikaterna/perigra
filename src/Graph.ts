@@ -42,21 +42,20 @@ export default class Graph<NodeType, PathType> {
   }
 
   getEntity(id: EntityId): Entity<NodeType | PathType> {
-    const Entity: Entity<NodeType | PathType> | undefined = this.getEntityUnsafe(id);
-    if (Entity === undefined) {
-      throw new RangeError('id not found in graph: ' + id);
+    const entity: Entity<NodeType | PathType> | undefined = this.getEntityUnsafe(id);
+    if (entity === undefined) {
+      throw new RangeError(`id not found in graph: ${id}`);
     } else {
-      return Entity;
+      return entity;
     }
   }
 
   getEntityAs<J extends Entity<NodeType | PathType>>(id: EntityId, type: EntityType) {
-    const Entity: Entity<NodeType | PathType> = this.getEntity(id);
-    if (Entity.type === type) {
-      return Entity as J;
-    } else {
-      throw new TypeError(`Entity of wrong type got ${Entity.type} expected ${type}`);
+    const entity: Entity<NodeType | PathType> = this.getEntity(id);
+    if (entity.type === type) {
+      return entity as J;
     }
+    throw new TypeError(`Entity of wrong type got ${entity.type} expected ${type}`);
   }
 
   getNode(id: EntityId): Node<NodeType> {

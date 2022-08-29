@@ -7,7 +7,7 @@ import GraphAction, { ActionType } from '../update/GraphAction';
  */
 export default class Differentiator<N, P> {
   difference(base: Graph<N, P>, head: Graph<N, P>): readonly GraphAction<N | P>[] {
-    //Unique "set" of id's from both graphs (head and base)
+    // Unique "set" of id's from both graphs (head and base)
     const ids = Array.from(new Set(Array.from(base.entityIds()).concat(Array.from(head.entityIds()))));
     const changes = [];
     for (let i = 0; i < ids.length; i++) {
@@ -32,10 +32,10 @@ export default class Differentiator<N, P> {
       // Added
       return { type: ActionType.Added, base: b, head: h };
     } else if (h && b) {
-      //Replaced
+      // Replaced
       return { type: ActionType.Replaced, base: b, head: h };
     }
 
-    throw new Error('Unable to process change: ' + h + ' || ' + b);
+    throw new Error(`Unable to process change: ${h} || ${b}`);
   }
 }

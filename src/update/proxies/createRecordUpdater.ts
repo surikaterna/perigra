@@ -16,7 +16,7 @@ const createRecordUpdater = <T extends Record<string, any>, TParent>(orgTarget: 
           const value = { ...target, ...changes };
           result = resultCallback(value);
         } else {
-          throw new Error('Record Proxy unable to resolve intention!! ' + key);
+          throw new Error(`Record Proxy unable to resolve intention!! ${key}`);
         }
         return result;
       };

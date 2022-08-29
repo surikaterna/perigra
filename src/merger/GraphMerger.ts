@@ -21,20 +21,19 @@ export default class GraphUpgrader<NodeType, PathType> {
   increment(changes: GraphAction<NodeType | PathType>[]) {
     const state = this.head._cloneState();
     changes.forEach((change) => {
+      const node = change.base as Node<NodeType>;
       switch (change.type) {
         case ActionType.Added:
         case ActionType.Replaced:
           if (!change.head) {
-            throw new Error('No head available' + change);
+            throw new Error('No head available');
           }
           state.entities.set(change.head.id, change.head);
           break;
         case ActionType.Removed:
           if (!change.base) {
-            throw new Error('No base available' + change);
+            throw new Error('No base available');
           }
-          const node = change.base as Node<NodeType>;
-
           // change all the paths that link this node.
           // TODO: break out to separate changes
           if (node.type === EntityType.Node) {
@@ -49,6 +48,7 @@ export default class GraphUpgrader<NodeType, PathType> {
           }
           state.entities.delete(change.base.id);
           break;
+        default:
       }
     });
 

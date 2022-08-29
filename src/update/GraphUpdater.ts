@@ -65,7 +65,7 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
         return action.head;
       }
     }
-    throw new Error('Unable to find entity for id: ' + id);
+    throw new Error(`Unable to find entity for id: ${id}`);
   }
 
   private entityUpdater<T extends Entity<NodeType | PathType>>(node: T): ObjectUpdater<T, GraphUpdater<NodeType, PathType>> {

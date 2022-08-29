@@ -7,7 +7,7 @@ import Cache from './Cache';
 
 export default class CacheBuilder {
   buildCache<NodeType, PathType>(entities: Map<EntityId, Entity<NodeType | PathType>>, ids: EntityId[]) {
-    let idArray = ids;
+    const idArray = ids;
 
     const state = idArray.reduce((map, id) => {
       const entity = entities.get(id);
@@ -60,7 +60,7 @@ export default class CacheBuilder {
 
       case ActionType.Replaced:
         if (!currentEntity || !newEntity) {
-          throw new Error('No base or head available' + change);
+          throw new Error('No base or head available');
         }
         const currentNodePaths = state.get(currentEntity.id);
         state.delete(currentEntity.id);
@@ -69,10 +69,11 @@ export default class CacheBuilder {
 
       case ActionType.Removed:
         if (!currentEntity) {
-          throw new Error('No base available' + change);
+          throw new Error('No base available');
         }
         state.delete(currentEntity.id);
         break;
+      default:
     }
   }
 
@@ -94,7 +95,7 @@ export default class CacheBuilder {
 
       case ActionType.Replaced:
         if (!currentPath || !newPath) {
-          throw new Error('No base or head available' + change);
+          throw new Error('No base or head available');
         }
         state.forEach((paths) => {
           const foundPathIndex = paths.findIndex((p) => p.id === newPath.id);
@@ -106,7 +107,7 @@ export default class CacheBuilder {
 
       case ActionType.Removed:
         if (!currentPath) {
-          throw new Error('No base available' + change);
+          throw new Error('No base available');
         }
 
         state.forEach((paths) => {
@@ -117,6 +118,7 @@ export default class CacheBuilder {
         });
 
         break;
+      default:
     }
   }
 }
