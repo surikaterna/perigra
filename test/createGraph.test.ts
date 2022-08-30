@@ -46,7 +46,7 @@ describe('GraphUpdater', () => {
     const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2] };
 
     let graph = new Graph<typeof node1, typeof path1>([]);
-    let updater = graph.beginUpdate();
+    const updater = graph.beginUpdate();
 
     updater.addNode(node1);
     updater.addNode(node2);
@@ -56,6 +56,35 @@ describe('GraphUpdater', () => {
 
     expect(graph.getEntityPaths('node-1')).toEqual([path1]);
     expect(graph.getEntityPaths('node-2')).toEqual([path1]);
+
+    done();
+  });
+
+  it('should update paths and entitiesPaths when a node is replaced', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node1Updated = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos3 };
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2] };
+
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addPath(path1);
+
+    graph = updater.commit();
+
+    updater = graph.beginUpdate();
+
+    updater.replaceEntity(node1Updated);
+
+    graph = updater.commit();
+    expect(graph.getNode('node-1')).toEqual(node1Updated);
+    expect(graph.getPath('path-1').nodes).toEqual([node1Updated, node2]);
 
     done();
   });

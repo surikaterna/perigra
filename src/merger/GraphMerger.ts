@@ -22,13 +22,29 @@ export default class GraphUpgrader<NodeType, PathType> {
     const state = this.head._cloneState();
     changes.forEach((change) => {
       const node = change.base as Node<NodeType>;
+      const headNode = change.head as Node<NodeType>;
       switch (change.type) {
         case ActionType.Added:
-        case ActionType.Replaced:
           if (!change.head) {
             throw new Error('No head available');
           }
           state.entities.set(change.head.id, change.head);
+          break;
+        case ActionType.Replaced:
+          if (!headNode || !node) {
+            throw new Error('No head available');
+          }
+          state.entities.set(headNode.id, headNode);
+          if (node.type === EntityType.Node) {
+            this.head.getEntityPaths(node.id).forEach((path) => {
+              const nodeIndex = path.nodes.findIndex((n) => n.id === node.id);
+              if (nodeIndex > -1) {
+                const newNodes = [...path.nodes] as Node<NodeType>[];
+                newNodes.splice(nodeIndex, 1, headNode);
+                state.entities.set(path.id, { ...path, nodes: newNodes });
+              }
+            });
+          }
           break;
         case ActionType.Removed:
           if (!change.base) {
