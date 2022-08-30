@@ -20,6 +20,7 @@ export default class GraphUpgrader<NodeType, PathType> {
 
   increment(changes: GraphAction<NodeType | PathType>[]) {
     const state = this.head._cloneState();
+    const newChages = [...changes];
     changes.forEach((change) => {
       const node = change.base as Node<NodeType>;
       const headNode = change.head as Node<NodeType>;
@@ -34,14 +35,16 @@ export default class GraphUpgrader<NodeType, PathType> {
           if (!headNode || !node) {
             throw new Error('No head available');
           }
-          state.entities.set(headNode.id, headNode);
+          state.entities.set(node.id, headNode);
           if (node.type === EntityType.Node) {
             this.head.getEntityPaths(node.id).forEach((path) => {
               const nodeIndex = path.nodes.findIndex((n) => n.id === node.id);
               if (nodeIndex > -1) {
                 const newNodes = [...path.nodes] as Node<NodeType>[];
                 newNodes.splice(nodeIndex, 1, headNode);
-                state.entities.set(path.id, { ...path, nodes: newNodes });
+                const newPath = { ...path, nodes: newNodes };
+                state.entities.set(path.id, newPath);
+                newChages.push({ type: ActionType.Replaced, base: path, head: newPath });
               }
             });
           }
@@ -56,9 +59,12 @@ export default class GraphUpgrader<NodeType, PathType> {
             this.head.getEntityPaths(node.id).forEach((path) => {
               const newNodes = path.nodes.filter((n) => n.id !== node.id);
               if (newNodes.length > 1) {
-                state.entities.set(path.id, { ...path, nodes: newNodes });
+                const newPath = { ...path, nodes: newNodes };
+                state.entities.set(path.id, newPath);
+                newChages.push({ type: ActionType.Replaced, base: path, head: newPath });
               } else {
                 state.entities.delete(path.id);
+                newChages.push({ type: ActionType.Removed, base: path });
               }
             });
           }
@@ -68,7 +74,7 @@ export default class GraphUpgrader<NodeType, PathType> {
       }
     });
 
-    const cache = state.cache.increment(changes);
+    const cache = state.cache.increment(newChages);
     return (this.head = Graph.initialize<NodeType, PathType>(state.entities, cache));
   }
 }

@@ -62,11 +62,7 @@ export default class CacheBuilder {
         if (!currentEntity || !newEntity) {
           throw new Error('No base or head available');
         }
-        const currentNodePaths = state.get(currentEntity.id);
-        state.delete(currentEntity.id);
-        state.set(newEntity.id, currentNodePaths ?? []);
         break;
-
       case ActionType.Removed:
         if (!currentEntity) {
           throw new Error('No base available');

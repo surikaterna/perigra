@@ -64,9 +64,11 @@ describe('GraphUpdater', () => {
     const pos1: [number, number] = [0, 0];
     const pos2: [number, number] = [0, 1];
     const pos3: [number, number] = [0, 2];
+    const pos4: [number, number] = [0, 3];
     const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
     const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
     const node1Updated = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos3 };
+    const node2Updated = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos4 };
     const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2] };
 
     let graph = new Graph<typeof node1, typeof path1>([]);
@@ -85,6 +87,12 @@ describe('GraphUpdater', () => {
     graph = updater.commit();
     expect(graph.getNode('node-1')).toEqual(node1Updated);
     expect(graph.getPath('path-1').nodes).toEqual([node1Updated, node2]);
+
+    updater = graph.beginUpdate();
+    updater.replaceEntity(node2Updated);
+    graph = updater.commit();
+    expect(graph.getNode('node-2')).toEqual(node2Updated);
+    expect(graph.getPath('path-1').nodes).toEqual([node1Updated, node2Updated]);
 
     done();
   });
