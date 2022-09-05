@@ -96,4 +96,29 @@ describe('GraphUpdater', () => {
 
     done();
   });
+
+  it('should not add same path to entityPaths', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 21];
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node3, node1] };
+
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    const updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addNode(node3);
+    updater.addPath(path1);
+
+    graph = updater.commit();
+
+    expect(graph.getEntityPaths('node-1').length).toEqual(1);
+
+    done();
+  });
 });

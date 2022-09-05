@@ -83,7 +83,10 @@ export default class CacheBuilder {
           throw new Error('No head available');
         }
         // need to iterate to all nodes in path
-        newPath.nodes.forEach((node) => {
+        const uniqueNodes = newPath.nodes.filter((value, index, self) => {
+          return self.indexOf(value) === index;
+        });
+        uniqueNodes.forEach((node) => {
           const nodePaths = state.get(node.id);
           nodePaths?.push(newPath);
         });
