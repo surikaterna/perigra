@@ -22,8 +22,8 @@ export default class GraphUpgrader<NodeType, PathType> {
     const state = this.head._cloneState();
     const newChages = [...changes];
     changes.forEach((change) => {
-      const node = change.base as Node<NodeType>;
-      const headNode = change.head as Node<NodeType>;
+      const node = change.base as Node<NodeType>; // current node
+      const headNode = change.head as Node<NodeType>; // new node
       switch (change.type) {
         case ActionType.Added:
           if (!change.head) {
@@ -38,14 +38,16 @@ export default class GraphUpgrader<NodeType, PathType> {
           state.entities.set(node.id, headNode);
           if (node.type === EntityType.Node) {
             this.head.getEntityPaths(node.id).forEach((path) => {
-              const nodeIndex = path.nodes.findIndex((n) => n.id === node.id);
-              if (nodeIndex > -1) {
-                const newNodes = [...path.nodes] as Node<NodeType>[];
-                newNodes.splice(nodeIndex, 1, headNode);
-                const newPath = { ...path, nodes: newNodes };
-                state.entities.set(path.id, newPath);
-                newChages.push({ type: ActionType.Replaced, base: path, head: newPath });
-              }
+              const newPathNodes = path.nodes.reduce<Node<NodeType>[]>((result, n) => {
+                if (n.id !== headNode.id) {
+                  return [...result, n];
+                }
+                return [...result, headNode];
+              }, []);
+
+              const newPath = { ...path, nodes: newPathNodes };
+              state.entities.set(path.id, newPath);
+              newChages.push({ type: ActionType.Replaced, base: path, head: newPath });
             });
           }
           break;
