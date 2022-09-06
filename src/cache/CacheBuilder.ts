@@ -1,6 +1,7 @@
 import Entity from '../Entity';
 import EntityId from '../EntityId';
 import EntityType from '../EntityType';
+import deepCloneMap from '../helper/deepCloneMap';
 import Path from '../Path';
 import GraphAction, { ActionType } from '../update/GraphAction';
 import Cache from './Cache';
@@ -26,7 +27,7 @@ export default class CacheBuilder {
   }
 
   increment<NodeType, PathType>(currentState: Map<EntityId, Path<PathType, NodeType>[]>, changes: GraphAction<NodeType | PathType>[]) {
-    const newState = new Map(currentState);
+    const newState = deepCloneMap(currentState);
 
     changes.forEach((change) => {
       const newEntity = change.head;

@@ -32,6 +32,7 @@ export default class Graph<NodeType, PathType> {
    */
   _cloneState() {
     return {
+      // TODO: not deep copy on object
       entities: new Map(this._entities),
       cache: this._cache.clone()
     };
