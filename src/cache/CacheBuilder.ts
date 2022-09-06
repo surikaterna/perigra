@@ -101,6 +101,8 @@ export default class CacheBuilder {
           const foundPathIndex = paths.findIndex((p) => p.id === newPath.id);
           if (foundPathIndex > -1) {
             paths.splice(foundPathIndex, 1, newPath);
+          } else {
+            paths.push(newPath);
           }
         });
         break;
