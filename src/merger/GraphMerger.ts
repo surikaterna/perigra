@@ -1,6 +1,8 @@
+import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import Graph from '../Graph';
 import Node from '../Node';
+import Path from '../Path';
 import GraphAction, { ActionType } from '../update/GraphAction';
 // type applyer = <E>(action: GraphAction<E>) => void
 // const applyers = {
@@ -21,6 +23,11 @@ export default class GraphUpgrader<NodeType, PathType> {
   increment(changes: GraphAction<NodeType | PathType>[]) {
     const state = this.head._cloneState();
     const newChages = [...changes];
+
+    // to keep updated path accumulated to changes
+    const updatedPaths = new Map<EntityId, Path<PathType, NodeType>>();
+
+    // const changedPaths =
     changes.forEach((change) => {
       const node = change.base as Node<NodeType>; // current node
       const headNode = change.head as Node<NodeType>; // new node
@@ -38,16 +45,15 @@ export default class GraphUpgrader<NodeType, PathType> {
           state.entities.set(node.id, headNode);
           if (node.type === EntityType.Node) {
             this.head.getEntityPaths(node.id).forEach((path) => {
-              const newPathNodes = path.nodes.reduce<Node<NodeType>[]>((result, n) => {
-                if (n.id !== headNode.id) {
+              const updatedPath = updatedPaths.get(path.id) || path;
+              const newPathNodes = updatedPath.nodes.reduce<Node<NodeType>[]>((result, n) => {
+                if (n.id !== node.id) {
                   return [...result, n];
                 }
                 return [...result, headNode];
               }, []);
-
-              const newPath = { ...path, nodes: newPathNodes };
-              state.entities.set(path.id, newPath);
-              newChages.push({ type: ActionType.Replaced, base: path, head: newPath });
+              const newPath = { ...updatedPath, nodes: newPathNodes };
+              updatedPaths.set(path.id, newPath);
             });
           }
           break;
@@ -74,6 +80,12 @@ export default class GraphUpgrader<NodeType, PathType> {
           break;
         default:
       }
+    });
+
+    updatedPaths.forEach((value) => {
+      const currentPath = state.entities.get(value.id);
+      state.entities.set(value.id, value);
+      newChages.push({ type: ActionType.Replaced, base: currentPath, head: value });
     });
 
     const cache = state.cache.increment(newChages);
