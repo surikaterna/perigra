@@ -63,6 +63,7 @@ export default class GraphUpgrader<NodeType, PathType> {
           }
           // change all the paths that link this node.
           // TODO: break out to separate changes
+          // TODO: refatoring how to manage consecutive changes t.ex. multile replace nodes, delete nodes and add and replace again..
           if (node.type === EntityType.Node) {
             this.head.getEntityPaths(node.id).forEach((path) => {
               const newNodes = path.nodes.filter((n) => n.id !== node.id);
@@ -74,6 +75,7 @@ export default class GraphUpgrader<NodeType, PathType> {
                 state.entities.delete(path.id);
                 newChages.push({ type: ActionType.Removed, base: path });
               }
+              updatedPaths.delete(path.id);
             });
           }
           state.entities.delete(change.base.id);
