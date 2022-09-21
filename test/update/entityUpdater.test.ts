@@ -92,7 +92,7 @@ describe('entityUpdater', () => {
     done();
   });
 
-  it('should add to entityPaths when existing path get replaced but not existed yet in a new node', (done) => {
+  it('should add to entityPaths when existing path get replaced but not existed yet in a new node (add new node to existing path case)', (done) => {
     const pos1: [number, number] = [0, 0];
     const pos2: [number, number] = [0, 1];
     const pos3: [number, number] = [0, 2];
@@ -119,6 +119,98 @@ describe('entityUpdater', () => {
     graph = updater.commit();
 
     expect(graph.getEntityPaths('node-3').length).toEqual(1);
+
+    done();
+  });
+
+  it('should correctly join node', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+    const pos4: [number, number] = [0, 3];
+
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+    const node4 = { id: 'node-4', type: EntityType.Node, tags: {}, position: pos4 };
+
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node1] };
+    const path2 = { id: 'path-2', type: EntityType.Path, tags: {}, nodes: [node3, node4] };
+
+    const path2updated = { id: 'path-2', type: EntityType.Path, tags: {}, nodes: [node1, node4] };
+
+    // first state
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addNode(node3);
+    updater.addNode(node4);
+    updater.addPath(path1);
+    updater.addPath(path2);
+    graph = updater.commit();
+
+    // second
+    updater = graph.beginUpdate();
+
+    updater.removeEntity('node-3');
+    updater.replaceEntity(path2updated);
+
+    graph = updater.commit();
+
+    expect(graph.getEntityPaths('node-1')[0].id).toBe('path-1');
+    expect(graph.getEntityPaths('node-1')[1].id).toBe('path-2');
+
+    expect(graph.getEntityPaths('node-1')[0].nodes.map((n) => n.id)).toEqual(['node-1', 'node-2', 'node-1']);
+    expect(graph.getEntityPaths('node-1')[1].nodes.map((n) => n.id)).toEqual(['node-1', 'node-4']);
+
+    done();
+  });
+
+  it('should correctly unjoin node', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+    const pos4: [number, number] = [0, 3];
+    const pos5: [number, number] = [0, 4];
+    const pos6: [number, number] = [0, 5];
+
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+    const node4 = { id: 'node-4', type: EntityType.Node, tags: {}, position: pos4 };
+    const node5 = { id: 'node-5', type: EntityType.Node, tags: {}, position: pos5 };
+    const node6 = { id: 'node-6', type: EntityType.Node, tags: {}, position: pos6 };
+
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node1] };
+    const path2 = { id: 'path-2', type: EntityType.Path, tags: {}, nodes: [node1, node3, node4] };
+
+    const path1updated = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node5, node2, node5] };
+    const path2updated = { id: 'path-2', type: EntityType.Path, tags: {}, nodes: [node6, node3, node4] };
+
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addNode(node3);
+    updater.addNode(node4);
+    updater.addPath(path1);
+    updater.addPath(path2);
+    graph = updater.commit();
+
+    updater = graph.beginUpdate();
+    updater.removeEntity(node1.id);
+    updater.addNode(node5);
+    updater.replaceEntity(path1updated);
+    updater.addNode(node6);
+    updater.replaceEntity(path2updated);
+
+    graph = updater.commit();
+
+    const pathsOfNode2 = graph.getEntityPaths('node-2');
+    expect(pathsOfNode2.some((p) => p.id === 'path-1')).toBeTruthy();
 
     done();
   });

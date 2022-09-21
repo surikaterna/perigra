@@ -22,13 +22,16 @@ export default class GraphUpgrader<NodeType, PathType> {
 
   increment(changes: GraphAction<NodeType | PathType>[]) {
     const state = this.head._cloneState();
-    const newChages = [...changes];
+    const newChanges = [...changes];
 
     // to keep updated path accumulated to changes
-    const updatedPaths = new Map<EntityId, Path<PathType, NodeType>>();
+    const toBeChangedPaths = new Map<EntityId, Path<PathType, NodeType>>();
+    const toBeRemovedPaths = new Map<EntityId, Path<PathType, NodeType>>();
 
     // const changedPaths =
     changes.forEach((change) => {
+      const isPath = (change.head?.type ?? change.base?.type) === EntityType.Path;
+
       const node = change.base as Node<NodeType>; // current node
       const headNode = change.head as Node<NodeType>; // new node
       switch (change.type) {
@@ -36,26 +39,38 @@ export default class GraphUpgrader<NodeType, PathType> {
           if (!change.head) {
             throw new Error('No head available');
           }
-          state.entities.set(change.head.id, change.head);
+
+          if (isPath) {
+            const path = change.head as Path<PathType, NodeType>;
+            toBeChangedPaths.set(path.id, path);
+            toBeRemovedPaths.delete(path.id);
+          } else {
+            state.entities.set(change.head.id, change.head);
+          }
           break;
         case ActionType.Replaced:
           if (!headNode || !node) {
             throw new Error('No head available');
           }
-          state.entities.set(node.id, headNode);
-          if (node.type === EntityType.Node) {
-            this.head.getEntityPaths(node.id).forEach((path) => {
-              const updatedPath = updatedPaths.get(path.id) || path;
-              const newPathNodes = updatedPath.nodes.reduce<Node<NodeType>[]>((result, n) => {
+          if (isPath) {
+            const path = change.head as Path<PathType, NodeType>;
+            toBeChangedPaths.set(path.id, path);
+            toBeRemovedPaths.delete(path.id);
+          } else {
+            state.entities.set(node.id, headNode);
+            this.head.getEntityPaths(node.id).forEach((entityPath) => {
+              const path = toBeChangedPaths.get(entityPath.id) || entityPath;
+              const newPathNodes = path.nodes.reduce<Node<NodeType>[]>((result, n) => {
                 if (n.id !== node.id) {
                   return [...result, n];
                 }
                 return [...result, headNode];
               }, []);
-              const newPath = { ...updatedPath, nodes: newPathNodes };
-              updatedPaths.set(path.id, newPath);
+              const newPath = { ...path, nodes: newPathNodes };
+              toBeChangedPaths.set(path.id, newPath);
             });
           }
+
           break;
         case ActionType.Removed:
           if (!change.base) {
@@ -64,33 +79,43 @@ export default class GraphUpgrader<NodeType, PathType> {
           // change all the paths that link this node.
           // TODO: break out to separate changes
           // TODO: refatoring how to manage consecutive changes t.ex. multile replace nodes, delete nodes and add and replace again..
-          if (node.type === EntityType.Node) {
-            this.head.getEntityPaths(node.id).forEach((path) => {
+          if (isPath) {
+            const path = change.base as Path<PathType, NodeType>;
+            toBeRemovedPaths.set(path.id, path);
+          } else {
+            state.entities.delete(change.base.id);
+            this.head.getEntityPaths(node.id).forEach((entityPath) => {
+              const path = toBeChangedPaths.get(entityPath.id) || entityPath;
               const newNodes = path.nodes.filter((n) => n.id !== node.id);
-              if (newNodes.length > 1) {
-                const newPath = { ...path, nodes: newNodes };
-                state.entities.set(path.id, newPath);
-                newChages.push({ type: ActionType.Replaced, base: path, head: newPath });
-              } else {
-                state.entities.delete(path.id);
-                newChages.push({ type: ActionType.Removed, base: path });
-              }
-              updatedPaths.delete(path.id);
+              const newPath = { ...path, nodes: newNodes };
+              toBeChangedPaths.set(path.id, newPath);
             });
           }
-          state.entities.delete(change.base.id);
           break;
         default:
       }
     });
 
-    updatedPaths.forEach((value) => {
+    toBeChangedPaths.forEach((value) => {
       const currentPath = state.entities.get(value.id);
+      if (value.nodes.length === 0) {
+        state.entities.delete(value.id);
+        return;
+      }
       state.entities.set(value.id, value);
-      newChages.push({ type: ActionType.Replaced, base: currentPath, head: value });
+      // should this change be put to the cache builder to replace path ?
+      if (currentPath) {
+        newChanges.push({ type: ActionType.Replaced, base: currentPath, head: value });
+      }
     });
 
-    const cache = state.cache.increment(newChages);
+    toBeRemovedPaths.forEach((value) => {
+      state.entities.delete(value.id);
+      // should this change be put to the cache builder to replace path ?
+      newChanges.push({ type: ActionType.Removed, base: value });
+    });
+
+    const cache = state.cache.increment(newChanges);
     return (this.head = Graph.initialize<NodeType, PathType>(state.entities, cache));
   }
 }
