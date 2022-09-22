@@ -215,6 +215,86 @@ describe('entityUpdater', () => {
     done();
   });
 
+  it('should correctly delete path and its node', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node3, node1] };
+
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    // initial state
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addNode(node3);
+
+    updater.addPath(path1);
+
+    graph = updater.commit();
+
+    // next state
+    updater = graph.beginUpdate();
+    updater.removeEntity(path1.id);
+    updater.removeEntity(node1.id);
+    updater.removeEntity(node2.id);
+    updater.removeEntity(node3.id);
+
+    graph = updater.commit();
+
+    expect(graph.entities.length).toBe(0);
+
+    done();
+  });
+
+  it('should have entityPaths correctly when draw a path containing the existing node of another path', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+    const pos4: [number, number] = [0, 3];
+    const pos5: [number, number] = [0, 4];
+    const pos6: [number, number] = [0, 5];
+
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+    const node4 = { id: 'node-4', type: EntityType.Node, tags: {}, position: pos4 };
+    const node5 = { id: 'node-5', type: EntityType.Node, tags: {}, position: pos5 };
+    const node6 = { id: 'node-6', type: EntityType.Node, tags: {}, position: pos6 };
+
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node3, node4, node1] };
+    const path2 = { id: 'path-2', type: EntityType.Path, tags: {}, nodes: [node1, node5, node6, node1] };
+
+    // init
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addNode(node3);
+    updater.addNode(node4);
+    updater.addPath(path1);
+    graph = updater.commit();
+
+    // next state
+    updater = graph.beginUpdate();
+    updater.replaceEntity(node1);
+    updater.addNode(node5);
+    updater.addNode(node6);
+    updater.addPath(path2);
+    graph = updater.commit();
+
+    expect(graph.getEntityPaths('node-5').length).toBe(1);
+    expect(graph.getEntityPaths('node-6').length).toBe(1);
+
+    done();
+  });
+
   // TODO
   // order should not be matter when delete path and nodes
   // now it matters if we delete path first and then all nodes of that path

@@ -97,11 +97,12 @@ export default class CacheBuilder {
         if (!currentPath || !newPath) {
           throw new Error('No base or head available');
         }
-        state.forEach((paths) => {
+        state.forEach((paths, entityId) => {
+          const isPathRelated = newPath.nodes.some((n) => n.id === entityId);
           const foundPathIndex = paths.findIndex((p) => p.id === newPath.id);
           if (foundPathIndex > -1) {
             paths.splice(foundPathIndex, 1, newPath);
-          } else {
+          } else if (isPathRelated) {
             paths.push(newPath);
           }
         });
