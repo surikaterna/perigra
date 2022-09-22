@@ -85,7 +85,7 @@ export default class CacheBuilder {
         }
         // need to iterate to all nodes in path
         const uniqueNodes = newPath.nodes.filter((value, index, self) => {
-          return self.indexOf(value) === index;
+          return self.findIndex((x) => x.id === value.id) === index;
         });
         uniqueNodes.forEach((node) => {
           const nodePaths = state.get(node.id);
