@@ -14,7 +14,7 @@ export default class CacheBuilder {
       const entity = entities.get(id);
       if (entity && entity.type === EntityType.Path) {
         const path = entity as Path<PathType, NodeType>;
-        path.nodes.forEach((node) => {
+        this.getUniqueNodes(path).forEach((node) => {
           const paths = map.get(node.id) || [];
           paths.push(path);
           map.set(node.id, paths);
@@ -84,9 +84,7 @@ export default class CacheBuilder {
           throw new Error('No head available');
         }
         // need to iterate to all nodes in path
-        const uniqueNodes = newPath.nodes.filter((value, index, self) => {
-          return self.findIndex((x) => x.id === value.id) === index;
-        });
+        const uniqueNodes = this.getUniqueNodes(newPath);
         uniqueNodes.forEach((node) => {
           const nodePaths = state.get(node.id);
           nodePaths?.push(newPath);
@@ -123,5 +121,12 @@ export default class CacheBuilder {
         break;
       default:
     }
+  }
+
+  private getUniqueNodes<NodeType, PathType>(path: Path<PathType, NodeType>) {
+    const uniqueNodes = path.nodes.filter((value, index, self) => {
+      return self.findIndex((x) => x.id === value.id) === index;
+    });
+    return uniqueNodes;
   }
 }
