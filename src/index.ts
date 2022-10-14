@@ -1,6 +1,10 @@
-export * from './Graph';
-export * from './Entity';
-export * from './Node';
-export * from './Path';
-export * from './EntityId';
-export * from './EntityType';
+export { default as Graph } from './Graph';
+export { default as Entity } from './Entity';
+export { default as Node } from './Node';
+export { default as Path } from './Path';
+export { default as EntityId } from './EntityId';
+export { default as EntityType } from './EntityType';
+export { default as Cache } from './cache/Cache';
+export { default as CacheBuilder } from './cache/CacheBuilder';
+export { default as GraphUpdater } from './update/GraphUpdater';
+export { default as GraphAction } from './update/GraphAction';

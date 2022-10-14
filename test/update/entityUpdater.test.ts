@@ -295,6 +295,43 @@ describe('entityUpdater', () => {
     done();
   });
 
+  it('should copy paths and nodes with newId correctly', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node3, node1] };
+
+    const node1c = { id: 'node-1c', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2c = { id: 'node-2c', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3c = { id: 'node-3c', type: EntityType.Node, tags: {}, position: pos3 };
+    const path1c = { id: 'path-1c', type: EntityType.Path, tags: {}, nodes: [node1c, node2c, node3c, node1c] };
+
+    // init
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addNode(node3);
+    updater.addPath(path1);
+    graph = updater.commit();
+
+    // next state
+    updater = graph.beginUpdate();
+
+    updater.addNode(node1c);
+    updater.addNode(node2c);
+    updater.addNode(node3c);
+    updater.addPath(path1c);
+    graph = updater.commit();
+
+    done();
+  });
+
   // TODO
   // order should not be matter when delete path and nodes
   // now it matters if we delete path first and then all nodes of that path

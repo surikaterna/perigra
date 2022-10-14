@@ -192,4 +192,39 @@ describe('GraphUpdater', () => {
 
     done();
   });
+
+  it.skip('Graph cloneState should do deep copy', (done) => {
+    const pos1: [number, number] = [0, 0];
+    const pos2: [number, number] = [0, 1];
+    const pos3: [number, number] = [0, 2];
+
+    const node1 = { id: 'node-1', type: EntityType.Node, tags: {}, position: pos1 };
+    const node2 = { id: 'node-2', type: EntityType.Node, tags: {}, position: pos2 };
+    const node3 = { id: 'node-3', type: EntityType.Node, tags: {}, position: pos3 };
+
+    const path1 = { id: 'path-1', type: EntityType.Path, tags: {}, nodes: [node1, node2, node1] };
+    const path2 = { id: 'path-2', type: EntityType.Path, tags: {}, nodes: [node1, node3] };
+
+    let graph = new Graph<typeof node1, typeof path1>([]);
+    let updater = graph.beginUpdate();
+
+    updater.addNode(node1);
+    updater.addNode(node2);
+    updater.addPath(path1);
+
+    graph = updater.commit();
+
+    updater = graph.beginUpdate();
+    updater.replaceEntity(node1);
+    updater.addNode(node3);
+    updater.addPath(path2);
+
+    const graph2 = updater.commit();
+
+    const ref1 = graph._cloneState().entities.get('node-1');
+    const ref2 = graph2._cloneState().entities.get('node-1');
+    expect(ref1 === ref2).toEqual(false);
+
+    done();
+  });
 });
