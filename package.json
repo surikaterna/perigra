@@ -30,7 +30,7 @@
   "author": "Surikat",
   "devDependencies": {
     "@size-limit/preset-small-lib": "^8.0.1",
-    "@surikat/kshort": "github:surikaterna/kshort#feature/graph-getters",
+    "@surikat/kshort": "github:surikaterna/kshort",
     "@swc/cli": "^0.1.57",
     "@swc/core": "^1.2.220",
     "@swc/jest": "^0.2.22",
