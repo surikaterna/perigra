@@ -2,6 +2,7 @@ export { default as Graph } from './Graph';
 export { default as Entity } from './Entity';
 export { default as Node } from './Node';
 export { default as Path } from './Path';
+export { default as Relation } from './Relation';
 export { default as EntityId } from './EntityId';
 export { default as EntityType } from './EntityType';
 export { default as Cache } from './cache/Cache';
