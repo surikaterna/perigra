@@ -5,10 +5,11 @@ import EntityId from './EntityId';
 import EntityType from './EntityType';
 import Node from './Node';
 import Path from './Path';
+import Relation from './Relation';
 import GraphUpdater from './update/GraphUpdater';
 
 export default class Graph<NodeType, PathType> {
-  private _entities: Map<EntityId, Entity<NodeType | PathType>>;
+  private _entities: Map<EntityId, Entity<NodeType | PathType | Relation<PathType, NodeType>>>;
   private _cache: Cache<NodeType, PathType>;
 
   constructor(entities: Entity<NodeType | PathType>[]) {
@@ -19,7 +20,10 @@ export default class Graph<NodeType, PathType> {
     this._cache = new CacheBuilder().buildCache<NodeType, PathType>(this._entities, Array.from(this.entityIds()));
   }
 
-  static initialize<NodeType, PathType>(entityMap: Map<EntityId, Entity<NodeType | PathType>>, cache: Cache<NodeType, PathType>): Graph<NodeType, PathType> {
+  static initialize<NodeType, PathType>(
+    entityMap: Map<EntityId, Entity<NodeType | PathType | Relation<PathType, NodeType>>>,
+    cache: Cache<NodeType, PathType>
+  ): Graph<NodeType, PathType> {
     const graph = new Graph<NodeType, PathType>([]);
     graph._entities = entityMap;
     graph._cache = cache;
@@ -38,12 +42,12 @@ export default class Graph<NodeType, PathType> {
     };
   }
 
-  getEntityUnsafe(id: EntityId): Entity<NodeType | PathType> | undefined {
+  getEntityUnsafe(id: EntityId): Entity<NodeType | PathType | Relation<PathType, NodeType>> | undefined {
     return this._entities.get(id);
   }
 
-  getEntity(id: EntityId): Entity<NodeType | PathType> {
-    const entity: Entity<NodeType | PathType> | undefined = this.getEntityUnsafe(id);
+  getEntity(id: EntityId): Entity<NodeType | PathType | Relation<PathType, NodeType>> {
+    const entity: Entity<NodeType | PathType | Relation<PathType, NodeType>> | undefined = this.getEntityUnsafe(id);
     if (entity === undefined) {
       throw new RangeError(`id not found in graph: ${id}`);
     } else {
@@ -51,8 +55,8 @@ export default class Graph<NodeType, PathType> {
     }
   }
 
-  getEntityAs<J extends Entity<NodeType | PathType>>(id: EntityId, type: EntityType) {
-    const entity: Entity<NodeType | PathType> = this.getEntity(id);
+  getEntityAs<J extends Entity<NodeType | PathType | Relation<PathType, NodeType>>>(id: EntityId, type: EntityType) {
+    const entity: Entity<NodeType | PathType | Relation<PathType, NodeType>> = this.getEntity(id);
     if (entity.type === type) {
       return entity as J;
     }
@@ -81,5 +85,13 @@ export default class Graph<NodeType, PathType> {
 
   beginUpdate() {
     return new GraphUpdater<NodeType, PathType>(this);
+  }
+
+  getRelation(id: EntityId): Relation<PathType, NodeType> {
+    return this.getEntityAs(id, EntityType.Relation);
+  }
+
+  getEntityRelations(id: EntityId): Relation<PathType, NodeType>[] {
+    return this._cache.getEntityRelations(id) || [];
   }
 }

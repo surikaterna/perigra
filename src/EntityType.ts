@@ -1,5 +1,6 @@
 enum EntityType {
   Node,
-  Path
+  Path,
+  Relation
 }
 export default EntityType;

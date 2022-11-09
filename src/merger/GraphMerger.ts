@@ -3,6 +3,7 @@ import EntityType from '../EntityType';
 import Graph from '../Graph';
 import Node from '../Node';
 import Path from '../Path';
+import Relation from '../Relation';
 import GraphAction, { ActionType } from '../update/GraphAction';
 // type applyer = <E>(action: GraphAction<E>) => void
 // const applyers = {
@@ -20,7 +21,7 @@ export default class GraphUpgrader<NodeType, PathType> {
     this.head = base;
   }
 
-  increment(changes: GraphAction<NodeType | PathType>[]) {
+  increment(changes: GraphAction<NodeType | PathType | Relation<PathType, NodeType>>[]) {
     const state = this.head._cloneState();
     const newChanges = [...changes];
 
@@ -30,6 +31,7 @@ export default class GraphUpgrader<NodeType, PathType> {
 
     // const changedPaths =
     changes.forEach((change) => {
+      const isRelation = (change.head?.type ?? change.base?.type) === EntityType.Relation;
       const isPath = (change.head?.type ?? change.base?.type) === EntityType.Path;
 
       const node = change.base as Node<NodeType>; // current node
@@ -40,7 +42,9 @@ export default class GraphUpgrader<NodeType, PathType> {
             throw new Error('No head available');
           }
 
-          if (isPath) {
+          if (isRelation) {
+            state.entities.set(change.head.id, change.head);
+          } else if (isPath) {
             const path = change.head as Path<PathType, NodeType>;
             toBeChangedPaths.set(path.id, path);
             toBeRemovedPaths.delete(path.id);
@@ -52,7 +56,10 @@ export default class GraphUpgrader<NodeType, PathType> {
           if (!headNode || !node) {
             throw new Error('No head available');
           }
-          if (isPath) {
+
+          if (isRelation) {
+            state.entities.set(node.id, headNode);
+          } else if (isPath) {
             const path = change.head as Path<PathType, NodeType>;
             toBeChangedPaths.set(path.id, path);
             toBeRemovedPaths.delete(path.id);
@@ -79,7 +86,10 @@ export default class GraphUpgrader<NodeType, PathType> {
           // change all the paths that link this node.
           // TODO: break out to separate changes
           // TODO: refatoring how to manage consecutive changes t.ex. multile replace nodes, delete nodes and add and replace again..
-          if (isPath) {
+          if (isRelation) {
+            state.entities.delete(change.base.id);
+            // TODO: to implement update to getEntityRelations
+          } else if (isPath) {
             const path = change.base as Path<PathType, NodeType>;
             toBeRemovedPaths.set(path.id, path);
           } else {

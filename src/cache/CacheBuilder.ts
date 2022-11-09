@@ -3,11 +3,12 @@ import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import deepCloneMap from '../helper/deepCloneMap';
 import Path from '../Path';
+import Relation, { RelationMember } from '../Relation';
 import GraphAction, { ActionType } from '../update/GraphAction';
 import Cache from './Cache';
 
 export default class CacheBuilder {
-  buildCache<NodeType, PathType>(entities: Map<EntityId, Entity<NodeType | PathType>>, ids: EntityId[]) {
+  buildCache<NodeType, PathType>(entities: Map<EntityId, Entity<NodeType | PathType | Relation<PathType, NodeType>>>, ids: EntityId[]) {
     const idArray = ids;
 
     const state = idArray.reduce((map, id) => {
@@ -23,11 +24,29 @@ export default class CacheBuilder {
       return map;
     }, new Map<EntityId, Path<PathType, NodeType>[]>());
 
-    return new Cache<NodeType, PathType>(state);
+    const cachedRelations = idArray.reduce((map, id) => {
+      const entity = entities.get(id);
+      if (entity && entity.type === EntityType.Relation) {
+        const relation = entity as Relation<PathType, NodeType>;
+        relation.members.forEach((member) => {
+          const relations = map.get(member.id) || [];
+          relations.push(relation);
+          map.set(entity.id, relations);
+        });
+      }
+      return map;
+    }, new Map<EntityId, Relation<PathType, NodeType>[]>());
+
+    return new Cache<NodeType, PathType>(state, cachedRelations);
   }
 
-  increment<NodeType, PathType>(currentState: Map<EntityId, Path<PathType, NodeType>[]>, changes: GraphAction<NodeType | PathType>[]) {
+  increment<NodeType, PathType>(
+    currentState: Map<EntityId, Path<PathType, NodeType>[]>,
+    currentRelations: Map<EntityId, Relation<PathType, NodeType>[]>,
+    changes: GraphAction<NodeType | PathType | Relation<PathType, NodeType>>[]
+  ) {
     const newState = deepCloneMap(currentState);
+    const newRelations = deepCloneMap(currentRelations);
 
     changes.forEach((change) => {
       const newEntity = change.head;
@@ -42,9 +61,11 @@ export default class CacheBuilder {
       if (isPath) {
         this.applyPathChange(newState, change as GraphAction<Path<PathType, NodeType>>);
       }
+
+      this.applyRelationChange(newRelations, change);
     });
 
-    return new Cache<NodeType, PathType>(newState);
+    return new Cache<NodeType, PathType>(newState, newRelations);
   }
 
   private applyNodeChange<NodeType, PathType>(state: Map<EntityId, Path<PathType, NodeType>[]>, change: GraphAction<NodeType>) {
@@ -120,6 +141,96 @@ export default class CacheBuilder {
 
         break;
       default:
+    }
+  }
+
+  private applyRelationChange<NodeType, PathType>(
+    state: Map<EntityId, Relation<PathType, NodeType>[]>,
+    change: GraphAction<NodeType | PathType | Relation<PathType, NodeType>>
+  ) {
+    const newEntity = change.head;
+    const currentEntity = change.base;
+
+    const isRelation = (newEntity?.type ?? currentEntity?.type) === EntityType.Relation;
+
+    if (isRelation) {
+      const newRelation = change.head as Relation<PathType, NodeType>;
+      const currentRelation = change.base as Relation<PathType, NodeType>;
+
+      switch (change.type) {
+        case ActionType.Added:
+          if (!newRelation) {
+            throw new Error('No head available');
+          }
+          newRelation.members.forEach((member) => {
+            const relations = state.get(member.id) || [];
+            relations.push(newRelation);
+            state.set(member.id, relations);
+          });
+          break;
+        case ActionType.Replaced:
+          if (!currentRelation || !newRelation) {
+            throw new Error('No base or head available');
+          }
+          state.forEach((relations) => {
+            const foundIndex = relations.findIndex((e) => e.id === currentRelation.id);
+            if (foundIndex > -1) {
+              relations.splice(foundIndex, 1);
+            }
+          });
+          newRelation.members.forEach((member) => {
+            const relations = state.get(member.id) || [];
+            relations.push(newRelation);
+            state.set(member.id, relations);
+          });
+          break;
+        case ActionType.Removed:
+          if (!currentRelation) {
+            throw new Error('No base available');
+          }
+
+          state.forEach((relations) => {
+            const foundIndex = relations.findIndex((e) => e.id === currentRelation.id);
+            if (foundIndex > -1) {
+              relations.splice(foundIndex, 1);
+            }
+          });
+          break;
+        default:
+      }
+    } else {
+      switch (change.type) {
+        case ActionType.Replaced:
+          if (!currentEntity || !newEntity) {
+            throw new Error('No base or head available');
+          }
+          const updatedRelations = state.get(currentEntity.id);
+          updatedRelations?.forEach((relation) => {
+            const foundIndex = relation.members.findIndex((m) => m.id === currentEntity.id);
+            relation.members.splice(foundIndex, 1, newEntity as RelationMember<PathType, NodeType>);
+          });
+          break;
+        case ActionType.Removed:
+          if (!currentEntity) {
+            throw new Error('No base available');
+          }
+          const relations = state.get(currentEntity.id);
+          const newRelations = relations?.reduce<Relation<PathType, NodeType>[]>((result, relation) => {
+            const foundIndex = relation.members.findIndex((m) => m.id === currentEntity.id);
+            relation.members.splice(foundIndex, 1);
+
+            if (relation.members.length === 0) {
+              return result;
+            }
+            return [...result, relation];
+          }, []);
+
+          if (newRelations) {
+            state.set(currentEntity.id, newRelations);
+          }
+          break;
+        default:
+      }
     }
   }
 
