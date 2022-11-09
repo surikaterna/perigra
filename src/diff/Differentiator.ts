@@ -1,4 +1,3 @@
-import Entity from '../Entity';
 import EntityId from '../EntityId';
 import Graph from '../Graph';
 import Relation from '../Relation';
