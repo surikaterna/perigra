@@ -3,25 +3,27 @@ import EntityId from '../EntityId';
 import EntityType from '../EntityType';
 import Graph from '../Graph';
 import Node from '../Node';
-import GraphUpgrader from '../merger/GraphMerger';
+import GraphMerger from '../merger/GraphMerger';
 
 import GraphAction, { ActionType } from './GraphAction';
 import ObjectUpdater from './ObjectUpdater';
 import createObjectUpdater from './proxies/createObjectUpdater';
+import Path from '../Path';
+import Relation from '../Relation';
 
 export default class GraphUpdater<NodeType = {}, PathType = {}> {
-  private actions: GraphAction<NodeType | PathType>[] = [];
+  private actions: GraphAction<NodeType | PathType | Relation<PathType, NodeType>>[] = [];
   private graph: Graph<NodeType, PathType>;
   constructor(graph: Graph<NodeType, PathType> = new Graph([])) {
     this.graph = graph;
   }
 
-  queue(action: GraphAction<NodeType | PathType>): GraphUpdater<NodeType, PathType> {
+  queue(action: GraphAction<NodeType | PathType | Relation<PathType, NodeType>>): GraphUpdater<NodeType, PathType> {
     this.actions.push(action);
     return this;
   }
 
-  addEntity(entity: Entity<NodeType | PathType>) {
+  addEntity(entity: Entity<NodeType | PathType | Relation<PathType, NodeType>>) {
     this.queue({ type: ActionType.Added, head: entity });
     return this.entityUpdater(entity);
   }
@@ -30,7 +32,8 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     return this.queue({ type: ActionType.Removed, base: this.graph.getEntityUnsafe(id) || this.resolveEntityFromChanges(id) });
   }
 
-  replaceEntity(_entity: Entity<NodeType | PathType>) {
+  // TODO: revise in the future to truncate change e.g. move the same node two times should be one change
+  replaceEntity(_entity: Entity<NodeType | PathType | Relation<PathType, NodeType>>) {
     return this.queue({ type: ActionType.Replaced, base: this.graph.getEntity(_entity.id), head: _entity });
   }
   // add path -> set
@@ -46,9 +49,19 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
   // node(12).tags().add('123','123').end().end().commit();//(12).insertAt(12, e).end().commit();
   // node(12).position()
 
+  addPath(path: Path<PathType, NodeType>) {
+    this.addEntity(path);
+    return this.entityUpdater(path);
+  }
+
   addNode(node: Node<NodeType>): ObjectUpdater<Node<NodeType>, GraphUpdater<NodeType, PathType>> {
     this.addEntity(node);
     return this.entityUpdater(node);
+  }
+
+  addRelation(relation: Relation<PathType, NodeType>) {
+    this.addEntity(relation);
+    return this.entityUpdater(relation);
   }
 
   private resolveEntityFromChanges(id: EntityId) {
@@ -58,10 +71,10 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
         return action.head;
       }
     }
-    throw new Error('Unable to find entity for id: ' + id);
+    throw new Error(`Unable to find entity for id: ${id}`);
   }
 
-  private entityUpdater<T extends Entity<NodeType | PathType>>(node: T): ObjectUpdater<T, GraphUpdater<NodeType, PathType>> {
+  private entityUpdater<T extends Entity<NodeType | PathType | Relation<PathType, NodeType>>>(node: T): ObjectUpdater<T, GraphUpdater<NodeType, PathType>> {
     return createObjectUpdater<T, GraphUpdater<NodeType, PathType>>(node, (entity) => {
       this.replaceEntity(entity);
       return this;
@@ -76,7 +89,7 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     return this.upgrade(this.actions);
   }
 
-  private upgrade(_actions: GraphAction<NodeType | PathType>[]): Graph<NodeType, PathType> {
+  private upgrade(_actions: GraphAction<NodeType | PathType | Relation<PathType, NodeType>>[]): Graph<NodeType, PathType> {
     // const state = this.graph._cloneState();
     // this.actions.forEach(a => a(state.entities));
 
@@ -84,6 +97,6 @@ export default class GraphUpdater<NodeType = {}, PathType = {}> {
     // TODO, actions should change the graph state
     // TODO, efficently recalculate cachedPaths depending on the changes / actions
     // return Graph.initialize<NodeType>(state.entities, state.cachedPaths);
-    return new GraphUpgrader(this.graph).increment(_actions);
+    return new GraphMerger(this.graph).increment(_actions);
   }
 }

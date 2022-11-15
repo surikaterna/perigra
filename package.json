@@ -1,53 +1,52 @@
 {
-  "version": "0.1.0",
+  "name": "@surikat/perigra",
+  "version": "0.3.0",
   "license": "MIT",
-  "main": "dist/index.js",
-  "typings": "dist/index.d.ts",
-  "files": [
-    "dist",
-    "src"
-  ],
-  "engines": {
-    "node": ">=10"
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "directories": {
+    "test": "test"
   },
   "scripts": {
-    "start": "tsdx watch",
-    "build": "tsdx build",
-    "test": "tsdx test",
-    "test:watch": "tsdx test --watch",
-    "lint": "tsdx lint",
-    "prepare": "tsdx build",
+    "test": "jest",
+    "test.watch": "jest --watch",
+    "compile": "rimraf lib && concurrently \"npm run compile.src\" \"npm run compile.types\"",
+    "compile.watch": "rimraf lib && concurrently \"npm run compile.src.watch\" \"npm run compile.types.watch\"",
+    "compile.src": "swc src --out-dir lib",
+    "compile.src.watch": "npm run compile.src -- --watch",
+    "compile.types": "tsc",
+    "compile.types.watch": "npm run compile.types -- --watch",
+    "prepare": "npm test && npm run size && npm run lint && npm run compile",
+    "prepublish": "npm run compile",
     "size": "size-limit",
-    "analyze": "size-limit --why"
+    "lint": "eslint src/**/*.[jt]s"
   },
-  "peerDependencies": {},
-  "husky": {
-    "hooks": {
-      "pre-commit": "tsdx lint"
-    }
-  },
-  "prettier": "prettier-config-surikaterna",
-  "name": "perigra",
-  "author": "Surikat",
-  "module": "dist/perigra.esm.js",
   "size-limit": [
     {
-      "path": "dist/perigra.cjs.production.min.js",
-      "limit": "10 KB"
-    },
-    {
-      "path": "dist/perigra.esm.js",
-      "limit": "10 KB"
+      "path": "lib/index.js"
     }
   ],
+  "prettier": "prettier-config-surikaterna",
+  "author": "Surikat",
   "devDependencies": {
-    "@size-limit/preset-small-lib": "^4.9.1",
-    "husky": "^4.3.7",
+    "@size-limit/preset-small-lib": "^8.0.1",
+    "@surikat/kshort": "github:surikaterna/kshort",
+    "@swc/cli": "^0.1.57",
+    "@swc/core": "^1.2.220",
+    "@swc/jest": "^0.2.22",
+    "@types/jest": "^28.1.6",
+    "@types/node": "^18.6.3",
+    "@typescript-eslint/eslint-plugin": "^5.35.1",
+    "@typescript-eslint/parser": "^5.35.1",
+    "concurrently": "^7.3.0",
+    "eslint": "^8.22.0",
+    "eslint-config-surikat": "^1.1.1",
+    "husky": "^8.0.1",
+    "jest": "^28.1.3",
     "prettier": "^2.1.2",
     "prettier-config-surikaterna": "^1.0.1",
-    "size-limit": "^4.9.1",
-    "tsdx": "^0.14.1",
-    "tslib": "^2.1.0",
-    "typescript": "^4.1.3"
+    "rimraf": "^3.0.2",
+    "size-limit": "^8.0.1",
+    "typescript": "~4.7.4"
   }
 }
