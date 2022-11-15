@@ -1,5 +1,5 @@
 {
-  "name": "perigra",
+  "name": "@surikat/perigra",
   "version": "0.3.0",
   "license": "MIT",
   "main": "lib/index.js",
