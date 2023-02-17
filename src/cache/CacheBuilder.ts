@@ -31,7 +31,7 @@ export default class CacheBuilder {
         relation.members.forEach((member) => {
           const relations = map.get(member.id) || [];
           relations.push(relation);
-          map.set(entity.id, relations);
+          map.set(member.id, relations);
         });
       }
       return map;
