@@ -35,9 +35,12 @@ export default class Graph<NodeType, PathType> {
    * Not expected to be used under normal usage of this class
    */
   _cloneState() {
+    const clonedEntities = new Map();
+    this._entities.forEach((value, key) => {
+      clonedEntities.set(key, { ...value });
+    });
     return {
-      // TODO: not deep copy on object
-      entities: new Map(this._entities),
+      entities: new Map(clonedEntities),
       cache: this._cache.clone()
     };
   }
