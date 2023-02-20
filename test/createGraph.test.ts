@@ -193,7 +193,7 @@ describe('GraphUpdater', () => {
     done();
   });
 
-  it.skip('Graph cloneState should do deep copy', (done) => {
+  it('Graph cloneState should not copy only reference of the entity', (done) => {
     const pos1: [number, number] = [0, 0];
     const pos2: [number, number] = [0, 1];
     const pos3: [number, number] = [0, 2];
